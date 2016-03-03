@@ -1,1 +1,1 @@
-# ensime-vsc
+# Ensime support for vscode
