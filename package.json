@@ -15,6 +15,20 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
+    "configuration": {
+      "type" : "object",
+      "title" : "Ensime configuration",
+      "properties": {
+        "Ensime.logLevel" : {
+          "type" : "string",
+          "default" : "trace",
+          "description": "Console log level. Raise level for troubleshooting",
+          "enum": [
+            "trace", "debug", "info", "warn", "error"
+          ]
+        }
+      }
+    },
     "commands": [
       {
         "command": "extension.sayHello",
