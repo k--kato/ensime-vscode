@@ -5,6 +5,7 @@
         "outDir": "out",
         "noLib": true,
         "sourceMap": true,
+        "moduleResolution": "node",
         "rootDir": "."
     },
     "exclude": [

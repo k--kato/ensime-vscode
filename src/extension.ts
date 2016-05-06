@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import ensimeClient = require("ensime-client")
 import * as isScalaSource from './utils'
 import logapi = require("loglevel")
+import dialog = require("dialog")
 let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
 
 let InstanceManager = ensimeClient.InstanceManager
@@ -14,15 +15,15 @@ let Instance = ensimeClient.Instance
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     //Get console log level from workspace settings (or user settings)
-    let logLevel = vscode.workspace.getConfiguration('Ensime.logLevel').toString()
+    let logLevel = vscode.workspace.getConfiguration('Ensime').logLevel.toString()
     
     logapi.getLogger('ensime.client').setLevel(logLevel)
     logapi.getLogger('ensime.server-update').setLevel(logLevel)
     logapi.getLogger('ensime.startup').setLevel(logLevel)
     logapi.getLogger('ensime.autocomplete-plus-provider').setLevel(logLevel)
     logapi.getLogger('ensime.refactorings').setLevel(logLevel)
-    log = logapi.getLogger('ensime.main')
-    log.setLevel(logLevel)
+    let mainLog = logapi.getLogger('ensime.main')
+    mainLog.setLevel(logLevel)
     
     //TODO: Install Dependencies if not there (Pretty sure this isn't possible in VSCode)
     
@@ -59,6 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Hello World!');
         console.log(ensimeClient)
         console.log("Please show ensime")
+        dialog.info("This should work")
         //vscode.window.showInformationMessage(ensime)
     });
     
@@ -105,12 +107,12 @@ function startInstance(dotEnsimePath : string) {
     let dotEnsime = parseDotEnsime(dotEnsimePath)
     //TODO: Typechecking
     //TODO: Status bar
-    startClient(dotEnsime, /*this.statusbarOutput(statusbarView, typechecking)*/, (client) => {
+    /*startClient(dotEnsime, this.statusbarOutput(statusbarView, typechecking), (client) => {
         vscode.window.showInformationMessage('Hello World!');
         
         //TODO: vscode specific ui state of an instance
         
-        let instance = new Instance(dotEnsime, client, /* ui */)
+        let instance = new Instance(dotEnsime, client, /* ui )
         this.instanceManager.registerInstance(instance)
         
         if(!this.activeInstance)
@@ -121,5 +123,5 @@ function startInstance(dotEnsimePath : string) {
         client.post({ "typehint" : "ConnectionInfoReq" }, (msg) => {})
         
         this.switchToInstance(instance)
-    })
+    })*/
 }

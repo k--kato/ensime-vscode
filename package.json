@@ -16,15 +16,19 @@
   "main": "./out/src/extension",
   "contributes": {
     "configuration": {
-      "type" : "object",
-      "title" : "Ensime configuration",
+      "type": "object",
+      "title": "Ensime configuration",
       "properties": {
-        "Ensime.logLevel" : {
-          "type" : "string",
-          "default" : "trace",
+        "Ensime.logLevel": {
+          "type": "string",
+          "default": "trace",
           "description": "Console log level. Raise level for troubleshooting",
           "enum": [
-            "trace", "debug", "info", "warn", "error"
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
           ]
         }
       }
@@ -46,6 +50,8 @@
     "vscode": "^0.11.0"
   },
   "dependencies": {
-    "ensime-client": "^0.3.3"
+    "dialog": "^0.1.8",
+    "ensime-client": "^0.3.3",
+    "which": "^1.2.8"
   }
 }
