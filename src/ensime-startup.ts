@@ -4,7 +4,8 @@ let path = require("path")
 
 let ensimeClient = require("ensime-client")
 
-//TODO: Implement {packageDir, withSbt, mkClasspathFileName, mkAssemblyJarFileName} = require('./utils')
+let utils = require('./utils')
+let packageDir = utils.packageDir, withSbt = utils.withSbt, mkClasspathFilename = utils.mkClasspathFilename, mkAssemblyJarFilebame = utils.mkAssemblyJarFilename
 
 let updateServer = ensimeClient.ensimeServerUpdate
 let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime
