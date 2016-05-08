@@ -12,6 +12,6 @@ let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime
 let startServerFromFile = ensimeClient.startServerFromFile
 let startServerFromAssemblyJar = ensimeClient.startServerFromAssemblyJar
 
-//TODO: Implement updateEnsimeServerWithCoursier = require './ensime-server-update-coursier'
+let updateEnsimeServerWithCoursier = require ('./ensime-server-update-coursier')
 let startupLog = require('loglevel').getLogger('ensime.startup')
 
