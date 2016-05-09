@@ -11,6 +11,8 @@
     "Other"
   ],
   "activationEvents": [
+    "onLanguage:scala",
+    "workspaceContains:.ensime",
     "onCommand:extension.sayHello"
   ],
   "main": "./out/src/extension",
@@ -30,6 +32,24 @@
             "warn",
             "error"
           ]
+        },
+        "Ensime.ensimeServerVersion" : {
+          "type" : "string",
+          "title" : "Ensime Server version",
+          "default" : "0.9.10-SNAPSHOT",
+          "description": "Version of the Ensime Server"
+        },
+        "Ensime.ensimeServerFlags" : {
+          "type" : "string",
+          "title" : "Ensime Server flags",
+          "default" : "",
+          "description": "Java flags for ensime server startup"
+        },
+        "Ensime.sbtExec" : {
+          "type" : "string",
+          "title" : "Path to SBT executable",
+          "default" : "",
+          "description": "Absolute path to sbt"
         }
       }
     },
@@ -37,6 +57,10 @@
       {
         "command": "extension.sayHello",
         "title": "Hello World"
+      },
+      {
+        "command" : "extension.start",
+        "title": "Ensime: Start"
       }
     ]
   },

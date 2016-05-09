@@ -7,6 +7,7 @@ import * as isScalaSource from './utils'
 import logapi = require("loglevel")
 import dialog = require("dialog")
 let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
+let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsimesFilter, ensimeClient.dotEnsimeUtils.allDotEnsimesInPaths
 
 let InstanceManager = ensimeClient.InstanceManager
 let Instance = ensimeClient.Instance
@@ -35,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     this.instanceManager = new InstanceManager
 
-    this.addCommandsForStoppedState()
+    //this.addCommandsForStoppedState()
     this.someInstanceStarted = false
     
     //TODO: ShowTypes hover handler
@@ -69,6 +70,36 @@ export function activate(context: vscode.ExtensionContext) {
     })
 
     context.subscriptions.push(disposable);
+    context.subscriptions.push(startCommand)
+}
+
+function selectDotEnsime(callback, filterMethod = () => true) {
+    let dirs = [vscode.workspace.rootPath]
+  
+    allDotEnsimesInPaths(dirs).then((dotEnsimes) => {
+      let filteredDotEnsime = dotEnsimes.filter(filterMethod)
+
+      if(filteredDotEnsime.length == 0)
+      {
+        vscode.window.showErrorMessage("No .ensime file found. Please generate with `sbt gen-ensime` or similar")
+      }
+      else if (filteredDotEnsime.length == 1)
+      {
+        callback(filteredDotEnsime[0])
+      }
+      else
+      {
+          vscode.window.showInformationMessage("Multiple .ensime files found, please select the one you wish to use", filteredDotEnsime
+          ).then((item) => callback(item))
+      }
+    })
+}
+
+function selectAndBootAnEnsime() {
+    this.selectDotEnsime(
+      (selectedDotEnsime) => this.startInstance(selectedDotEnsime.path),
+      (dotEnsime) => !this.instanceManager.isStarted(dotEnsime.path)
+    )
 }
 
 /*function observeEditor(editor : vscode.TextEditor) {
