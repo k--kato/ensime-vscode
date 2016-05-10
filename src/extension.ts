@@ -3,6 +3,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import ensimeClient = require("ensime-client")
+let startClient = require("./ensime-startup").startClient
 import * as isScalaSource from './utils'
 import logapi = require("loglevel")
 import dialog = require("dialog")
@@ -66,16 +67,119 @@ export function activate(context: vscode.ExtensionContext) {
     });
     
     let startCommand = vscode.commands.registerCommand('extension.start', () => {
-        console.log("TODO: Make this function start ensime")
+        console.log("Attempting to start ENSIME")
+        this.selectAndBootAnEnsime()
     })
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(startCommand)
+
+
+function statusbarOutput(statusbarItem, typechecking) {
+    return (msg) => {
+        let typehint = msg.typehint
+
+        if(typehint == 'AnalyzerReadyEvent')
+        {
+            statusbarItem.setText('Analyzer ready!')
+        }
+
+        else if(typehint == 'FullTypeCheckCompleteEvent')
+        {
+            statusbarItem.setText('Full typecheck finished!')
+        }
+
+        else if(typehint == 'IndexerReadyEvent')
+        {
+            statusbarItem.setText('Indexer ready!')
+        }
+
+        else if(typehint == 'CompilerRestartedEvent')
+        {
+            statusbarItem.setText('Compiler restarted!')
+        }
+
+        else if(typehint == 'ClearAllScalaNotesEvent')
+        {
+            //TODO: Implement
+            //typechecking?.clearScalaNotes()
+        }
+
+        else if(typehint == 'NewScalaNotesEvent')
+        {
+            //TODO: Implement
+            //typechecking?.addScalaNotes(msg)
+        }
+
+        else if(typehint.startsWith('SendBackgroundMessageEvent'))
+        {
+            statusbarItem.setText(msg.detail)
+        }
+    }
 }
 
+function startInstance(dotEnsimePath) {
+    console.log("startInstance")
+    //# Register model-view mappings
+    //@subscriptions.add atom.views.addViewProvider ImplicitInfo, (implicitInfo) ->
+      //result = new ImplicitInfoView().initialize(implicitInfo)
+      //result
+
+
+    //# remove start command and add others
+    //@stoppedCommands.dispose()
+
+    //# FIXME: - we have had double commands for each instance :) This is a quick and dirty fix
+    //if(not @someInstanceStarted)
+      //@addCommandsForStartedState()
+      //@someInstanceStarted = true
+
+    let dotEnsime = parseDotEnsime(dotEnsimePath)
+
+    let typechecking = undefined
+    if(this.indieLinterRegistry)
+    {
+      //let typechecking = TypeCheckingFeature(@indieLinterRegistry.register("Ensime: #{dotEnsimePath}"))
+    }
+
+    //TODO: Implement the vscode equivalent of this
+    //statusbarView = new StatusbarView()
+    //statusbarView.init()
+    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
+    statusbarItem.destroy = statusbarItem.dispose
+
+    startClient(dotEnsime, this.statusbarOutput(statusbarItem, typechecking), (client) => {
+      vscode.window.showInformationMessage("Ensime connected!")
+      
+      //# atom specific ui state of an instance
+      let ui = null //TODO: Implement the vscode equivalent of this
+      /*let ui = {
+        "statusbarView" : statusbarView,
+        "typechecking" : typechecking,
+        destroy : () => {
+          //statusbarView.destroy()
+          //typechecking?.destroy()
+        }
+      }*/
+      
+      let instance = new Instance(dotEnsime, client, ui)
+
+      this.instanceManager.registerInstance(instance)
+      
+      if (!this.activeInstance)
+      {
+        this.activeInstance = instance
+      }
+
+      client.post({"typehint":"ConnectionInfoReq"}, (msg) => {})
+
+      this.switchToInstance(instance)
+    })
+}
 function selectDotEnsime(callback, filterMethod = () => true) {
     let dirs = [vscode.workspace.rootPath]
   
+    console.log("selectDotEnsime")
     allDotEnsimesInPaths(dirs).then((dotEnsimes) => {
       let filteredDotEnsime = dotEnsimes.filter(filterMethod)
 
@@ -96,11 +200,15 @@ function selectDotEnsime(callback, filterMethod = () => true) {
 }
 
 function selectAndBootAnEnsime() {
+    console.log("selectAndBootAnEnsime ")
+    console.log(this)
     this.selectDotEnsime(
       (selectedDotEnsime) => this.startInstance(selectedDotEnsime.path),
-      (dotEnsime) => !this.instanceManager.isStarted(dotEnsime.path)
+      (dotEnsime) => { return !this.instanceManager.isStarted(dotEnsime.path) }
     )
 }
+
+
 
 /*function observeEditor(editor : vscode.TextEditor) {
     if (isScalaSource.isScalaSource(editor))
@@ -128,31 +236,7 @@ function selectAndBootAnEnsime() {
         )
     }
 }*/
-
+}
 // this method is called when your extension is deactivated
 export function deactivate() {
-}
-
-function startInstance(dotEnsimePath : string) {
-    //Add stuff with implicit info view (see ensime-atom source)
-    let dotEnsime = parseDotEnsime(dotEnsimePath)
-    //TODO: Typechecking
-    //TODO: Status bar
-    /*startClient(dotEnsime, this.statusbarOutput(statusbarView, typechecking), (client) => {
-        vscode.window.showInformationMessage('Hello World!');
-        
-        //TODO: vscode specific ui state of an instance
-        
-        let instance = new Instance(dotEnsime, client, /* ui )
-        this.instanceManager.registerInstance(instance)
-        
-        if(!this.activeInstance)
-        {
-            this.activeInstance = instance
-        }
-        
-        client.post({ "typehint" : "ConnectionInfoReq" }, (msg) => {})
-        
-        this.switchToInstance(instance)
-    })*/
 }

@@ -13,7 +13,7 @@ let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime
 let startServerFromFile = ensimeClient.startServerFromFile
 let startServerFromAssemblyJar = ensimeClient.startServerFromAssemblyJar
 
-let updateEnsimeServerWithCoursier = require ('./ensime-server-update-coursier')
+let updateEnsimeServerWithCoursier = require ('./ensime-server-update-coursier').getEnsimeServerUpdate
 let startupLog = require('loglevel').getLogger('ensime.startup')
 
 function classpathFileOk(cpF) {

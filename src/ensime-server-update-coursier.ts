@@ -17,6 +17,8 @@ function failure(msg, code) {
   vscode.window.showErrorMessage(msg)
 }
 
-let tempdir = packageDir() + path.sep + "ensime_update_coursier"
 
-module.exports = (require ('ensime-client')).ensimeServerUpdate(tempdir, getPidLogger, failure)
+export function getEnsimeServerUpdate(context : vscode.ExtensionContext) {
+  let tempdir = packageDir(context) + path.sep + "ensime_update_coursier"
+  return (require ('ensime-client')).ensimeServerUpdate(tempdir, getPidLogger, failure)
+}
