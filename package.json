@@ -1,0 +1,48 @@
+{
+  "name": "ensime",
+  "displayName": "ensime",
+  "description": "Ensime integration for vscode",
+  "version": "0.0.1",
+  "publisher": "hedefalk",
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:ensime.startEnsime"
+  ],
+  "main": "./out/src/ensime",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ensime.startEnsime",
+        "title": "Start ensime"
+      }
+    ],
+    "configuration": {
+        "type": "object",
+        "title": "TypeScript configuration",
+        "properties": {
+            "ensime.serverVersion": {
+                "type": "string",
+                "default": "0.9.10-SNAPSHOT",
+                "description": "Ensime server version"
+            }
+        }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "typescript": "^1.8.7",
+    "vscode": "^1.0.0"
+  },
+  "dependencies": {
+    "ensime-client": "^0.3.3"
+  }
+}
