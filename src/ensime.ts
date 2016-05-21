@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             };
             const startClient = EnsimeClient.ensimeClientStartup(serverStarter);
-            startClient(dotEnsime, )
+            // startClient(dotEnsime, )
         };
             
         vscode.window.showQuickPick(dotEnsimeStrings).then(onSelectedDotEnsime)
