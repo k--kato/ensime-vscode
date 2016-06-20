@@ -1,9 +1,9 @@
 declare module "server-api" {
-  
+
   export interface Typehinted {
     typehint: string;
   }
-  
+
   export interface Param {
     localName: string;
   }
@@ -12,7 +12,7 @@ declare module "server-api" {
     fun: Param; // Not really
     params: [Param];
   }
-  
+
   export interface ImplicitConversionInfo extends Typehinted {
     fun: Param;
   }
@@ -22,5 +22,5 @@ declare module "server-api" {
     fullName: string;
     declAs: any;
   }
-  
+
 }

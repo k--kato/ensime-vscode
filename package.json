@@ -33,22 +33,22 @@
             "error"
           ]
         },
-        "Ensime.ensimeServerVersion" : {
-          "type" : "string",
-          "title" : "Ensime Server version",
-          "default" : "0.9.10-SNAPSHOT",
+        "Ensime.ensimeServerVersion": {
+          "type": "string",
+          "title": "Ensime Server version",
+          "default": "0.9.10-SNAPSHOT",
           "description": "Version of the Ensime Server"
         },
-        "Ensime.ensimeServerFlags" : {
-          "type" : "string",
-          "title" : "Ensime Server flags",
-          "default" : "",
+        "Ensime.ensimeServerFlags": {
+          "type": "string",
+          "title": "Ensime Server flags",
+          "default": "",
           "description": "Java flags for ensime server startup"
         },
-        "Ensime.sbtExec" : {
-          "type" : "string",
-          "title" : "Path to SBT executable",
-          "default" : "",
+        "Ensime.sbtExec": {
+          "type": "string",
+          "title": "Path to SBT executable",
+          "default": "",
           "description": "Absolute path to sbt"
         }
       }
@@ -59,7 +59,7 @@
         "title": "Hello World"
       },
       {
-        "command" : "extension.start",
+        "command": "extension.start",
         "title": "Ensime: Start"
       }
     ]
@@ -76,6 +76,8 @@
   "dependencies": {
     "dialog": "^0.1.8",
     "ensime-client": "^0.3.3",
+    "fs-extra": "^0.30.0",
+    "loglevel": "^1.4.1",
     "which": "^1.2.8"
   }
 }

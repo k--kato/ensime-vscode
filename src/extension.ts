@@ -13,38 +13,45 @@ let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsi
 let InstanceManager = ensimeClient.InstanceManager
 let Instance = ensimeClient.Instance
 
+export var instanceManager
+
+export var activeInstance
+
+var mainLog
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     //Get console log level from workspace settings (or user settings)
     let logLevel = vscode.workspace.getConfiguration('Ensime').logLevel.toString()
-    
+
     logapi.getLogger('ensime.client').setLevel(logLevel)
     logapi.getLogger('ensime.server-update').setLevel(logLevel)
     logapi.getLogger('ensime.startup').setLevel(logLevel)
     logapi.getLogger('ensime.autocomplete-plus-provider').setLevel(logLevel)
     logapi.getLogger('ensime.refactorings').setLevel(logLevel)
-    let mainLog = logapi.getLogger('ensime.main')
+
+    mainLog = logapi.getLogger('ensime.main')
     mainLog.setLevel(logLevel)
-    
+
     //TODO: Install Dependencies if not there (Pretty sure this isn't possible in VSCode)
-    
+
     this.subscriptions = []
-    
+
     this.showTypesControllers = new WeakMap
     this.implicitControllers = new WeakMap
     this.autotypecheckControllers = new WeakMap
 
-    this.instanceManager = new InstanceManager
+    instanceManager = new InstanceManager
 
     //this.addCommandsForStoppedState()
     this.someInstanceStarted = false
-    
+
     //TODO: ShowTypes hover handler
     //TODO: ImportSuggestison
     //clientLookup = (editor) => this.clientOfEditor(editor)
     //this.autocompletePlusProvider = new AutocompletePlusProvider(clientLookup)
-  
+
     //this.importSuggestions = new ImportSuggestions()
     //this.refactorings = new Refactorings
 
@@ -65,10 +72,10 @@ export function activate(context: vscode.ExtensionContext) {
         dialog.info("This should work")
         //vscode.window.showInformationMessage(ensime)
     });
-    
+
     let startCommand = vscode.commands.registerCommand('extension.start', () => {
         console.log("Attempting to start ENSIME")
-        this.selectAndBootAnEnsime()
+        selectAndBootAnEnsime()
     })
 
     context.subscriptions.push(disposable);
@@ -133,11 +140,11 @@ function startInstance(dotEnsimePath) {
     //if(not @someInstanceStarted)
       //@addCommandsForStartedState()
       //@someInstanceStarted = true
-
-    let dotEnsime = parseDotEnsime(dotEnsimePath)
+    console.log(dotEnsimePath)
+    let dotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath)
 
     let typechecking = undefined
-    if(this.indieLinterRegistry)
+    //if(indieLinterRegistry)
     {
       //let typechecking = TypeCheckingFeature(@indieLinterRegistry.register("Ensime: #{dotEnsimePath}"))
     }
@@ -146,11 +153,11 @@ function startInstance(dotEnsimePath) {
     //statusbarView = new StatusbarView()
     //statusbarView.init()
     let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
-    statusbarItem.destroy = statusbarItem.dispose
+    //statusbarItem.destroy = statusbarItem.dispose
 
-    startClient(dotEnsime, this.statusbarOutput(statusbarItem, typechecking), (client) => {
+    startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
       vscode.window.showInformationMessage("Ensime connected!")
-      
+
       //# atom specific ui state of an instance
       let ui = null //TODO: Implement the vscode equivalent of this
       /*let ui = {
@@ -161,26 +168,36 @@ function startInstance(dotEnsimePath) {
           //typechecking?.destroy()
         }
       }*/
-      
+
       let instance = new Instance(dotEnsime, client, ui)
 
-      this.instanceManager.registerInstance(instance)
-      
-      if (!this.activeInstance)
+      instanceManager.registerInstance(instance)
+
+      if (!activeInstance)
       {
-        this.activeInstance = instance
+        activeInstance = instance
       }
 
       client.post({"typehint":"ConnectionInfoReq"}, (msg) => {})
 
-      this.switchToInstance(instance)
+      switchToInstance(instance)
     })
 }
-function selectDotEnsime(callback, filterMethod = () => true) {
+function selectDotEnsime(callback, filterMethod = (dotEnsime) => true) {
     let dirs = [vscode.workspace.rootPath]
-  
+
     console.log("selectDotEnsime")
-    allDotEnsimesInPaths(dirs).then((dotEnsimes) => {
+    let dotEnsimeUris = vscode.workspace.findFiles("**/.ensime", "node_modules", 10)
+    console.log(dotEnsimeUris)
+    let toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
+    dotEnsimeUris.then((uris) => {
+      if(!uris) {
+          vscode.window.showErrorMessage("You are not in a workspace. Please open a project before using ENSIME.")
+          return
+      }
+
+      let dotEnsimes = toString(uris)
+
       let filteredDotEnsime = dotEnsimes.filter(filterMethod)
 
       if(filteredDotEnsime.length == 0)
@@ -189,11 +206,13 @@ function selectDotEnsime(callback, filterMethod = () => true) {
       }
       else if (filteredDotEnsime.length == 1)
       {
+        console.log("callback")
+        console.log(filteredDotEnsime)
         callback(filteredDotEnsime[0])
       }
       else
       {
-          vscode.window.showInformationMessage("Multiple .ensime files found, please select the one you wish to use", filteredDotEnsime
+          vscode.window.showQuickPick(filteredDotEnsime
           ).then((item) => callback(item))
       }
     })
@@ -202,12 +221,24 @@ function selectDotEnsime(callback, filterMethod = () => true) {
 function selectAndBootAnEnsime() {
     console.log("selectAndBootAnEnsime ")
     console.log(this)
-    this.selectDotEnsime(
-      (selectedDotEnsime) => this.startInstance(selectedDotEnsime.path),
-      (dotEnsime) => { return !this.instanceManager.isStarted(dotEnsime.path) }
+    selectDotEnsime(
+      (selectedDotEnsime) => startInstance(selectedDotEnsime),
+      (dotEnsime) => { return !instanceManager.isStarted(dotEnsime) }
     )
 }
 
+function switchToInstance(instance) {
+  mainLog.trace(['changed from ', activeInstance, ' to ', instance])
+  if(instance != activeInstance)
+  {
+    activeInstance = instance
+
+    if(instance)
+    {
+        //instance.ui.statusbarView.show()
+    }
+  }
+}
 
 
 /*function observeEditor(editor : vscode.TextEditor) {
@@ -220,7 +251,7 @@ function selectAndBootAnEnsime() {
             if (!this.showTypesControllers.get(editor))
             {
                 this.showTypesControllers.set(editor, new ShowTypes(editor, clientLookup))
-            } 
+            }
         }
         if (!this.implicitControllers.get(editor))
         {

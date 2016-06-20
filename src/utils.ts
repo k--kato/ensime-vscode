@@ -11,7 +11,7 @@ export function isScalaSource(editor : vscode.TextEditor) {
 export function withSbt(callback, globalState : vscode.Memento) {
     let configName = 'Ensime.sbtExec'
     let sbtCmd = vscode.workspace.getConfiguration(configName).toString() || globalState.get(configName)
-    
+
     if(sbtCmd)
     {
         callback(sbtCmd)
@@ -31,7 +31,6 @@ export function withSbt(callback, globalState : vscode.Memento) {
                     globalState.update(configName, sbtCmd)
                     callback(sbtCmd)
                 })
-                
             }
             else
             {
@@ -39,7 +38,6 @@ export function withSbt(callback, globalState : vscode.Memento) {
                 callback(path)
             }
         })
-        
     }
 }
 
