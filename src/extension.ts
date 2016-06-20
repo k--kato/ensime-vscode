@@ -19,6 +19,8 @@ export var activeInstance
 
 var mainLog
 
+var typeHover
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -157,6 +159,18 @@ function startInstance(dotEnsimePath) {
 
     startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
       vscode.window.showInformationMessage("Ensime connected!")
+
+      typeHover = vscode.languages.registerHoverProvider('scala', {
+        provideHover(document, position, token) {
+            var p = new Promise<vscode.Hover>((resolve, reject) => {
+                client.getSymbolAtPoint(document.fileName, document.offsetAt(position), (msg) => {
+                    resolve(new vscode.Hover(msg.type.fullName))
+                })
+            })
+            return p
+        }
+    });
+
 
       //# atom specific ui state of an instance
       let ui = null //TODO: Implement the vscode equivalent of this

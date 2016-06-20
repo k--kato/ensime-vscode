@@ -45,7 +45,7 @@ function startEnsimeServer(parsedDotEnsime, pidCallback) {
 
     let ensimeServerFlags = ensimeConfig.ensimeServerFlags.toString()
     let assemblyJar = mkAssemblyJarFilename(parsedDotEnsime.scalaEdition, ensimeServerVersion)
-  
+
     if(fs.existsSync(assemblyJar))
     {
         startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerFlags, pidCallback)
