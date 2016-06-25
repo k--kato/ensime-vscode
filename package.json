@@ -5,32 +5,41 @@
   "version": "0.0.1",
   "publisher": "hedefalk",
   "engines": {
-    "vscode": "^1.0.0"
+    "vscode": "^1.2.0"
   },
   "categories": [
-    "Other"
+    "Languages"
   ],
   "activationEvents": [
     "onCommand:ensime.startEnsime"
   ],
-  "main": "./out/src/ensime",
+  "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
         "command": "ensime.startEnsime",
         "title": "Start ensime"
+      },
+      {
+        "command": "ensime.goToDefinitionOfCursor",
+        "title": "Go to definition"
       }
     ],
     "configuration": {
-        "type": "object",
-        "title": "TypeScript configuration",
-        "properties": {
-            "ensime.serverVersion": {
-                "type": "string",
-                "default": "0.9.10-SNAPSHOT",
-                "description": "Ensime server version"
-            }
+      "type": "object",
+      "title": "TypeScript configuration",
+      "properties": {
+        "ensime.serverVersion": {
+          "type": "string",
+          "default": "0.9.10-SNAPSHOT",
+          "description": "Ensime server version"
+        },
+        "ensime.ensimeServerFlags": {
+          "type": "string",
+          "default": "",
+          "description": "java flags for ensime server startup"
         }
+      }
     }
   },
   "scripts": {
@@ -39,10 +48,13 @@
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
-    "typescript": "^1.8.7",
-    "vscode": "^1.0.0"
+    "typescript": "^1.8.10",
+    "vscode": "^0.11.13",
+    "tslint": "^3.11.0"
   },
   "dependencies": {
-    "ensime-client": "^0.3.3"
+    "bluebird": "^3.4.1",
+    "fs-extra":"^0.30.0",
+    "ensime-client": "^0.4.1"
   }
 }

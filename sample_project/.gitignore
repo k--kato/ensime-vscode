@@ -1,0 +1,8 @@
+*.class
+target
+*.log
+*.lck
+classpath.txt
+.ensime_cache
+.ensime
+*.db
