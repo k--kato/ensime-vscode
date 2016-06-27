@@ -7,6 +7,8 @@ let startClient = require("./ensime-startup").startClient
 import * as isScalaSource from './utils'
 import logapi = require("loglevel")
 import dialog = require("dialog")
+import  * as TypeCheck from './features/typecheck'
+
 let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
 let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsimesFilter, ensimeClient.dotEnsimeUtils.allDotEnsimesInPaths
 
@@ -90,39 +92,41 @@ function statusbarOutput(statusbarItem, typechecking) {
 
         if(typehint == 'AnalyzerReadyEvent')
         {
-            statusbarItem.setText('Analyzer ready!')
+            statusbarItem.text = 'Analyzer ready!'
         }
 
         else if(typehint == 'FullTypeCheckCompleteEvent')
         {
-            statusbarItem.setText('Full typecheck finished!')
+            statusbarItem.text = 'Full typecheck finished!'
         }
 
         else if(typehint == 'IndexerReadyEvent')
         {
-            statusbarItem.setText('Indexer ready!')
+            statusbarItem.text = 'Indexer ready!'
         }
 
         else if(typehint == 'CompilerRestartedEvent')
         {
-            statusbarItem.setText('Compiler restarted!')
+            statusbarItem.text = 'Compiler restarted!'
         }
 
         else if(typehint == 'ClearAllScalaNotesEvent')
         {
             //TODO: Implement
             //typechecking?.clearScalaNotes()
+            TypeCheck.clearNotes()
         }
 
         else if(typehint == 'NewScalaNotesEvent')
         {
             //TODO: Implement
             //typechecking?.addScalaNotes(msg)
+            TypeCheck.addNotes(msg)
         }
 
         else if(typehint.startsWith('SendBackgroundMessageEvent'))
         {
-            statusbarItem.setText(msg.detail)
+            statusbarItem.text = msg.detail
         }
     }
 }
@@ -151,26 +155,34 @@ function startInstance(dotEnsimePath) {
       //let typechecking = TypeCheckingFeature(@indieLinterRegistry.register("Ensime: #{dotEnsimePath}"))
     }
 
-    //TODO: Implement the vscode equivalent of this
-    //statusbarView = new StatusbarView()
-    //statusbarView.init()
-    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
-    //statusbarItem.destroy = statusbarItem.dispose
+    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
+    statusbarItem.text = "Show me!"
+    statusbarItem.show()
 
     startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
       vscode.window.showInformationMessage("Ensime connected!")
-
-      typeHover = vscode.languages.registerHoverProvider('scala', {
-        provideHover(document, position, token) {
-            var p = new Promise<vscode.Hover>((resolve, reject) => {
-                client.getSymbolAtPoint(document.fileName, document.offsetAt(position), (msg) => {
-                    resolve(new vscode.Hover(msg.type.fullName))
+        TypeCheck.register(client)
+        let diagnosticCollection = vscode.languages.createDiagnosticCollection("fds")
+        typeHover = vscode.languages.registerHoverProvider('scala', {
+            provideHover(document, position, token) {
+            let testDiagnostic = new vscode.Diagnostic(new vscode.Range(new vscode.Position(0, 8), new vscode.Position(0, 9)), "Testing123")
+            diagnosticCollection.set(document.uri, [testDiagnostic])
+                var p = new Promise<vscode.Hover>((resolve, reject) => {
+                    client.getSymbolAtPoint(document.fileName, document.offsetAt(position), (msg) => {
+                        //TODO: Replace magic string
+                        if(msg.type.fullName != "<none>")
+                        {
+                            resolve(new vscode.Hover(msg.type.fullName))
+                        }
+                        else
+                        {
+                            reject(msg.type.fullName)
+                        }
+                    })
                 })
-            })
-            return p
-        }
-    });
-
+                return p
+            }
+        });
 
       //# atom specific ui state of an instance
       let ui = null //TODO: Implement the vscode equivalent of this
@@ -284,4 +296,18 @@ function switchToInstance(instance) {
 }
 // this method is called when your extension is deactivated
 export function deactivate() {
+    if(instanceManager)
+    {
+        instanceManager.destroyAll()
+    }
+    if(typeHover)
+    {
+        typeHover.dispose()
+    }
+    //@subscriptions.dispose()
+    //@controlSubscription.dispose()
+
+    //@autocompletePlusProvider?.dispose()
+ //@autocompletePlusProvider = null
+
 }

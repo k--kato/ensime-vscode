@@ -42,18 +42,17 @@ export function withSbt(callback, globalState : vscode.Memento) {
 }
 
 
-export function mkClasspathFilename(context : vscode.ExtensionContext, scalaVersion, ensimeServerVersion) {
-    return path.join(context.extensionPath, `classpath_${scalaVersion}_${ensimeServerVersion}`)
+export function mkClasspathFilename(scalaVersion, ensimeServerVersion) {
+    return path.join(packageDir(), `classpath_${scalaVersion}_${ensimeServerVersion}`)
 }
 
-export function mkAssemblyJarFilename(context : vscode.ExtensionContext, scalaEdition, ensimeServerVersion) {
-    return path.join(
-        context.extensionPath,
-        "ensime_#{scalaEdition}-#{ensimeServerVersion}-assembly.jar")
+export function mkAssemblyJarFilename(scalaEdition, ensimeServerVersion) {
+    return path.join( packageDir(), `ensime_${scalaEdition}-${ensimeServerVersion}-assembly.jar`)
 }
 
-export function packageDir(context : vscode.ExtensionContext) {
-  let packageDir = context.extensionPath
-  log.trace('packageDir: ' + packageDir)
-  return packageDir
+export function packageDir() {
+  return path.join(vscode.workspace.rootPath, ".ensime_cache")
+
+  //log.trace('packageDir: ' + packageDir)
+ // return packageDir
 }
