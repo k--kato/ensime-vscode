@@ -2,15 +2,18 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import ensimeClient = require("ensime-client")
-let startClient = require("./ensime-startup").startClient
+import * as ensimeClient from 'ensime-client'
+let { dotEnsimesFilter, allDotEnsimesInPaths, parseDotEnsime} = ensimeClient.dotEnsimeUtils
+import { startClient } from './ensime-startup'
 import * as isScalaSource from './utils'
 import logapi = require("loglevel")
 import dialog = require("dialog")
-import  * as TypeCheck from './features/typecheck'
 
-let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
-let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsimesFilter, ensimeClient.dotEnsimeUtils.allDotEnsimesInPaths
+import * as TypeCheck from './features/typecheck'
+import * as TypeHoverProvider from './features/typehoverprovider'
+
+//let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
+//let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsimesFilter, ensimeClient.dotEnsimeUtils.allDotEnsimesInPaths
 
 let InstanceManager = ensimeClient.InstanceManager
 let Instance = ensimeClient.Instance
@@ -27,7 +30,7 @@ var typeHover
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     //Get console log level from workspace settings (or user settings)
-    let logLevel = vscode.workspace.getConfiguration('Ensime').logLevel.toString()
+    let logLevel = vscode.workspace.getConfiguration('Ensime').get("logLevel", "trace").toString()
 
     logapi.getLogger('ensime.client').setLevel(logLevel)
     logapi.getLogger('ensime.server-update').setLevel(logLevel)
@@ -42,17 +45,19 @@ export function activate(context: vscode.ExtensionContext) {
 
     this.subscriptions = []
 
-    this.showTypesControllers = new WeakMap
-    this.implicitControllers = new WeakMap
-    this.autotypecheckControllers = new WeakMap
+    //this.showTypesControllers = new WeakMap
+    //this.implicitControllers = new WeakMap
+    //this.autotypecheckControllers = new WeakMap
 
     instanceManager = new InstanceManager
 
     //this.addCommandsForStoppedState()
     this.someInstanceStarted = false
 
-    //TODO: ShowTypes hover handler
     //TODO: ImportSuggestison
+    //TODO: Refactorings
+    //TODO: Autocomplete Provider
+
     //clientLookup = (editor) => this.clientOfEditor(editor)
     //this.autocompletePlusProvider = new AutocompletePlusProvider(clientLookup)
 
@@ -66,25 +71,14 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
-        console.log(ensimeClient)
-        console.log("Please show ensime")
-        dialog.info("This should work")
-        //vscode.window.showInformationMessage(ensime)
-    });
 
     let startCommand = vscode.commands.registerCommand('extension.start', () => {
         console.log("Attempting to start ENSIME")
         selectAndBootAnEnsime()
     })
 
-    context.subscriptions.push(disposable);
     context.subscriptions.push(startCommand)
-
+}
 
 function statusbarOutput(statusbarItem, typechecking) {
     return (msg) => {
@@ -155,37 +149,18 @@ function startInstance(dotEnsimePath) {
       //let typechecking = TypeCheckingFeature(@indieLinterRegistry.register("Ensime: #{dotEnsimePath}"))
     }
 
-    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
-    statusbarItem.text = "Show me!"
+    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
+    statusbarItem.text = "ENSIME"
     statusbarItem.show()
 
     startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
       vscode.window.showInformationMessage("Ensime connected!")
         TypeCheck.register(client)
-        let diagnosticCollection = vscode.languages.createDiagnosticCollection("fds")
-        typeHover = vscode.languages.registerHoverProvider('scala', {
-            provideHover(document, position, token) {
-            let testDiagnostic = new vscode.Diagnostic(new vscode.Range(new vscode.Position(0, 8), new vscode.Position(0, 9)), "Testing123")
-            diagnosticCollection.set(document.uri, [testDiagnostic])
-                var p = new Promise<vscode.Hover>((resolve, reject) => {
-                    client.getSymbolAtPoint(document.fileName, document.offsetAt(position), (msg) => {
-                        //TODO: Replace magic string
-                        if(msg.type.fullName != "<none>")
-                        {
-                            resolve(new vscode.Hover(msg.type.fullName))
-                        }
-                        else
-                        {
-                            reject(msg.type.fullName)
-                        }
-                    })
-                })
-                return p
-            }
-        });
+        let hoverProvider = TypeHoverProvider.registerTypeHoverProvider(client)
+        typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
 
       //# atom specific ui state of an instance
-      let ui = null //TODO: Implement the vscode equivalent of this
+      //let ui = null //TODO: Implement the vscode equivalent of this
       /*let ui = {
         "statusbarView" : statusbarView,
         "typechecking" : typechecking,
@@ -195,7 +170,7 @@ function startInstance(dotEnsimePath) {
         }
       }*/
 
-      let instance = new Instance(dotEnsime, client, ui)
+      let instance = new Instance(dotEnsime, client, null)
 
       instanceManager.registerInstance(instance)
 
@@ -266,34 +241,6 @@ function switchToInstance(instance) {
   }
 }
 
-
-/*function observeEditor(editor : vscode.TextEditor) {
-    if (isScalaSource.isScalaSource(editor))
-    {
-        let instanceLookup = () => this.instanceManager.instanceOfFile(editor.document.fileName)
-        let clientLookup = () => instanceLookup()?.client
-        if(vscode.workspace.getConfiguration('Ensime.enableTypeTooltip'))
-        {
-            if (!this.showTypesControllers.get(editor))
-            {
-                this.showTypesControllers.set(editor, new ShowTypes(editor, clientLookup))
-            }
-        }
-        if (!this.implicitControllers.get(editor))
-        {
-            this.implicitControllers.set(editor, new Implicits(editor, instanceLookup))
-        }
-        if (this.autotypecheckControllers.get(editor))
-        {
-            this.autotypecheckControllers.set(editor, new AutoTypecheck(editor, clientLookup))
-        }
-
-        this.subscriptions.pushback (editor.(() =>
-            this.deleteControllers(editor)
-        )
-    }
-}*/
-}
 // this method is called when your extension is deactivated
 export function deactivate() {
     if(instanceManager)

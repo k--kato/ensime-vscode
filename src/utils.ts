@@ -22,15 +22,9 @@ export function withSbt(callback, globalState : vscode.Memento) {
         which('sbt', (er, path) => {
             if(er)
             {
+                //TODO: Give user option of manually locating sbt executable
                 //Finally, make user manually get find sbtExec
-                dialog.showOpenDialog({
-                    title: "We need you to point out your SBT executive",
-                    properties:['openFile']
-                }, (filenames) => {
-                    sbtCmd = filenames[0]
-                    globalState.update(configName, sbtCmd)
-                    callback(sbtCmd)
-                })
+                vscode.window.showErrorMessage("Could not find SBT executable. Please add SBT to %PATH% or using User Settings (Preferences -> User Settings)")
             }
             else
             {

@@ -3,15 +3,13 @@ import * as vscode from "vscode"
 let fs = require("fs")
 let path = require("path")
 
-let ensimeClient = require("ensime-client")
+import {ensimeServerUpdate, dotEnsimeUtils, startServerFromFile, startServerFromAssemblyJar} from 'ensime-client'
 
 let utils = require('./utils')
 let packageDir = utils.packageDir, withSbt = utils.withSbt, mkClasspathFilename = utils.mkClasspathFilename, mkAssemblyJarFilename = utils.mkAssemblyJarFilename
 
-let updateServer = ensimeClient.ensimeServerUpdate
-let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime
-let startServerFromFile = ensimeClient.startServerFromFile
-let startServerFromAssemblyJar = ensimeClient.startServerFromAssemblyJar
+let updateServer = ensimeServerUpdate
+let parseDotEnsime = dotEnsimeUtils.parseDotEnsime
 
 let updateEnsimeServerWithCoursier = require ('./ensime-server-update-coursier').getEnsimeServerUpdate
 let startupLog = require('loglevel').getLogger('ensime.startup')
@@ -41,9 +39,9 @@ function startEnsimeServer(parsedDotEnsime, pidCallback) {
     }
 
     let ensimeConfig = vscode.workspace.getConfiguration('Ensime')
-    let ensimeServerVersion = ensimeConfig.ensimeServerVersion.toString()
+    let ensimeServerVersion = ensimeConfig.get('ensimeServerVersion').toString()
 
-    let ensimeServerFlags = ensimeConfig.ensimeServerFlags.toString()
+    let ensimeServerFlags = ensimeConfig.get('ensimeServerFlags').toString()
     let assemblyJar = mkAssemblyJarFilename(parsedDotEnsime.scalaEdition, ensimeServerVersion)
 
     if(fs.existsSync(assemblyJar))
@@ -67,6 +65,7 @@ function startEnsimeServer(parsedDotEnsime, pidCallback) {
 
 
 
-module.exports = {
-  startClient: (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)
-}
+//module.exports = {
+//  startClient: (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)
+//}
+export var startClient = (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)

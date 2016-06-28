@@ -13,7 +13,7 @@
   "activationEvents": [
     "onLanguage:scala",
     "workspaceContains:.ensime",
-    "onCommand:extension.sayHello"
+    "onCommand:extension.start"
   ],
   "main": "./out/src/extension",
   "contributes": {
@@ -70,12 +70,13 @@
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
-    "typescript": "^1.8.5",
+    "typescript": "^1.8.10",
     "vscode": "^0.11.0"
   },
   "dependencies": {
+    "bluebird": "^3.4.1",
     "dialog": "^0.1.8",
-    "ensime-client": "^0.3.3",
+    "ensime-client": "^0.4.1",
     "fs-extra": "^0.30.0",
     "loglevel": "^1.4.1",
     "which": "^1.2.8"
