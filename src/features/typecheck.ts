@@ -27,17 +27,7 @@ export function register(client) : vscode.Disposable {
 
     return vscode.workspace.onDidSaveTextDocument((document) => {
         documentMap[document.fileName] = document;
-        client.typecheckFile(document.fileName)/*.then((msg) => {
-            if(msg.typehint == "NewScalaNotesEvent")
-            {
-                addNotes(msg)
-            }
-            else if(msg.typehint == "ClearScalaNotesEvent")
-            {
-                clearNotes()
-            }
-            test
-        }, (err) => console.log(err))*/
+        client.typecheckFile(document.fileName)
     })
 }
 
@@ -83,7 +73,6 @@ function noteSeverityToDiagSeverity(note : Note) {
 }
 
 function noteToDiag(note : Note) : Option<vscode.Diagnostic> {
-    console.log(note)
     let doc : vscode.TextDocument = documentMap[vscode.Uri.file(note.file).fsPath]
 
     if(!doc)
@@ -99,8 +88,6 @@ function noteToDiag(note : Note) : Option<vscode.Diagnostic> {
             new vscode.Range(
                 start,
                 end
-                //new vscode.Position(note.line - 1, note.col - 1 - (note.end - note.beg)),
-                //new vscode.Position(note.line - 1, note.col - 1)
             ),
             note.msg,
             noteSeverityToDiagSeverity(note)

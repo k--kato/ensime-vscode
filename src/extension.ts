@@ -12,9 +12,6 @@ import dialog = require("dialog")
 import * as TypeCheck from './features/typecheck'
 import * as TypeHoverProvider from './features/typehoverprovider'
 
-//let parseDotEnsime = ensimeClient.dotEnsimeUtils.parseDontEnsime
-//let dotEnsimesFilter, allDotEnsimesInPaths = ensimeClient.dotEnsimeUtils.dotEnsimesFilter, ensimeClient.dotEnsimeUtils.allDotEnsimesInPaths
-
 let InstanceManager = ensimeClient.InstanceManager
 let Instance = ensimeClient.Instance
 
@@ -45,24 +42,15 @@ export function activate(context: vscode.ExtensionContext) {
 
     this.subscriptions = []
 
-    //this.showTypesControllers = new WeakMap
-    //this.implicitControllers = new WeakMap
-    //this.autotypecheckControllers = new WeakMap
-
     instanceManager = new InstanceManager
 
-    //this.addCommandsForStoppedState()
     this.someInstanceStarted = false
 
     //TODO: ImportSuggestison
     //TODO: Refactorings
     //TODO: Autocomplete Provider
-
-    //clientLookup = (editor) => this.clientOfEditor(editor)
-    //this.autocompletePlusProvider = new AutocompletePlusProvider(clientLookup)
-
-    //this.importSuggestions = new ImportSuggestions()
-    //this.refactorings = new Refactorings
+    //TODO: Implicit Info
+    //TODO: Add Commands for started and stopped state
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
@@ -80,6 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(startCommand)
 }
 
+//TODO: Move message handling into a separate method with calls to a status bar handler when necessary
 function statusbarOutput(statusbarItem, typechecking) {
     return (msg) => {
         let typehint = msg.typehint
@@ -106,15 +95,11 @@ function statusbarOutput(statusbarItem, typechecking) {
 
         else if(typehint == 'ClearAllScalaNotesEvent')
         {
-            //TODO: Implement
-            //typechecking?.clearScalaNotes()
             TypeCheck.clearNotes()
         }
 
         else if(typehint == 'NewScalaNotesEvent')
         {
-            //TODO: Implement
-            //typechecking?.addScalaNotes(msg)
             TypeCheck.addNotes(msg)
         }
 
@@ -126,70 +111,51 @@ function statusbarOutput(statusbarItem, typechecking) {
 }
 
 function startInstance(dotEnsimePath) {
-    console.log("startInstance")
-    //# Register model-view mappings
-    //@subscriptions.add atom.views.addViewProvider ImplicitInfo, (implicitInfo) ->
-      //result = new ImplicitInfoView().initialize(implicitInfo)
-      //result
 
 
-    //# remove start command and add others
-    //@stoppedCommands.dispose()
+    //TODO: remove start command and add others
 
     //# FIXME: - we have had double commands for each instance :) This is a quick and dirty fix
+    // Mocuto: In the atom version, why are started commands being added here rather than in the startClient callback?
     //if(not @someInstanceStarted)
       //@addCommandsForStartedState()
       //@someInstanceStarted = true
-    console.log(dotEnsimePath)
+
     let dotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath)
 
     let typechecking = undefined
-    //if(indieLinterRegistry)
-    {
-      //let typechecking = TypeCheckingFeature(@indieLinterRegistry.register("Ensime: #{dotEnsimePath}"))
-    }
 
     let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
     statusbarItem.text = "ENSIME"
     statusbarItem.show()
 
     startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
-      vscode.window.showInformationMessage("Ensime connected!")
+        //TODO: Add commands for started state here
+
+        vscode.window.showInformationMessage("Ensime connected!")
         TypeCheck.register(client)
         let hoverProvider = TypeHoverProvider.registerTypeHoverProvider(client)
         typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
 
-      //# atom specific ui state of an instance
-      //let ui = null //TODO: Implement the vscode equivalent of this
-      /*let ui = {
-        "statusbarView" : statusbarView,
-        "typechecking" : typechecking,
-        destroy : () => {
-          //statusbarView.destroy()
-          //typechecking?.destroy()
+        let instance = new Instance(dotEnsime, client, null)
+
+        instanceManager.registerInstance(instance)
+
+        if (!activeInstance)
+        {
+            activeInstance = instance
         }
-      }*/
 
-      let instance = new Instance(dotEnsime, client, null)
+        client.post({"typehint":"ConnectionInfoReq"}, (msg) => {})
 
-      instanceManager.registerInstance(instance)
-
-      if (!activeInstance)
-      {
-        activeInstance = instance
-      }
-
-      client.post({"typehint":"ConnectionInfoReq"}, (msg) => {})
-
-      switchToInstance(instance)
+        switchToInstance(instance)
     })
 }
 function selectDotEnsime(callback, filterMethod = (dotEnsime) => true) {
     let dirs = [vscode.workspace.rootPath]
 
-    console.log("selectDotEnsime")
     let dotEnsimeUris = vscode.workspace.findFiles("**/.ensime", "node_modules", 10)
-    console.log(dotEnsimeUris)
+
     let toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
     dotEnsimeUris.then((uris) => {
       if(!uris) {
@@ -207,21 +173,16 @@ function selectDotEnsime(callback, filterMethod = (dotEnsime) => true) {
       }
       else if (filteredDotEnsime.length == 1)
       {
-        console.log("callback")
-        console.log(filteredDotEnsime)
         callback(filteredDotEnsime[0])
       }
       else
       {
-          vscode.window.showQuickPick(filteredDotEnsime
-          ).then((item) => callback(item))
+          vscode.window.showQuickPick(filteredDotEnsime).then((item) => callback(item))
       }
     })
 }
 
 function selectAndBootAnEnsime() {
-    console.log("selectAndBootAnEnsime ")
-    console.log(this)
     selectDotEnsime(
       (selectedDotEnsime) => startInstance(selectedDotEnsime),
       (dotEnsime) => { return !instanceManager.isStarted(dotEnsime) }

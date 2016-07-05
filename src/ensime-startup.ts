@@ -63,9 +63,4 @@ function startEnsimeServer(parsedDotEnsime, pidCallback) {
     }
 }
 
-
-
-//module.exports = {
-//  startClient: (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)
-//}
 export var startClient = (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)

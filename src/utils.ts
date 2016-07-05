@@ -46,7 +46,4 @@ export function mkAssemblyJarFilename(scalaEdition, ensimeServerVersion) {
 
 export function packageDir() {
   return path.join(vscode.workspace.rootPath, ".ensime_cache")
-
-  //log.trace('packageDir: ' + packageDir)
- // return packageDir
 }
