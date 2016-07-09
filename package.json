@@ -11,27 +11,58 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:ensime.startEnsime"
+    "onLanguage:scala",
+    "workspaceContains:.ensime",
+    "onCommand:extension.start"
   ],
-  "main": "./out/src/ensime",
+  "main": "./out/src/extension",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Ensime configuration",
+      "properties": {
+        "Ensime.logLevel": {
+          "type": "string",
+          "default": "trace",
+          "description": "Console log level. Raise level for troubleshooting",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "Ensime.ensimeServerVersion": {
+          "type": "string",
+          "title": "Ensime Server version",
+          "default": "0.9.10-SNAPSHOT",
+          "description": "Version of the Ensime Server"
+        },
+        "Ensime.ensimeServerFlags": {
+          "type": "string",
+          "title": "Ensime Server flags",
+          "default": "",
+          "description": "Java flags for ensime server startup"
+        },
+        "Ensime.sbtExec": {
+          "type": "string",
+          "title": "Path to SBT executable",
+          "default": "",
+          "description": "Absolute path to sbt"
+        }
+      }
+    },
     "commands": [
       {
-        "command": "ensime.startEnsime",
-        "title": "Start ensime"
+        "command": "extension.sayHello",
+        "title": "Hello World"
+      },
+      {
+        "command": "extension.start",
+        "title": "Ensime: Start"
       }
-    ],
-    "configuration": {
-        "type": "object",
-        "title": "TypeScript configuration",
-        "properties": {
-            "ensime.serverVersion": {
-                "type": "string",
-                "default": "0.9.10-SNAPSHOT",
-                "description": "Ensime server version"
-            }
-        }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
@@ -39,10 +70,15 @@
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
-    "typescript": "^1.8.7",
-    "vscode": "^1.0.0"
+    "vscode": "^1.0.0",
+    "typescript": "^1.8.10"
   },
   "dependencies": {
-    "ensime-client": "^0.3.3"
+    "bluebird": "^3.4.1",
+    "dialog": "^0.1.8",
+    "ensime-client": "^0.4.1",
+    "fs-extra": "^0.30.0",
+    "loglevel": "^1.4.1",
+    "which": "^1.2.8"
   }
 }
