@@ -36,7 +36,7 @@ export function addNotes(msg : NoteMsg) {
     for(var i = 0; i < msg.notes.length; i++)
     {
         let note = msg.notes[i]
-        if(note.file.includes("rep-src"))
+        if(note.file.includes("dep-src"))
         {
             continue
         }
