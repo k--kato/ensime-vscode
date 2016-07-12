@@ -1,27 +1,29 @@
 import * as vscode from 'vscode'
-
+import {InstanceManager} from '../extension'
 const HOVER_NONE = "<none>"
 
-interface ISymbolClient {
-    getSymbolAtPoint(path : string, offset : number, callback : (msg : any) => any)
-}
 
-export function registerTypeHoverProvider(client : ISymbolClient) : vscode.HoverProvider {
+export function registerTypeHoverProvider(manager : InstanceManager) : vscode.HoverProvider {
     return {
         provideHover(document, position, token) {
-            let p = new Promise<vscode.Hover>((resolve, reject) => {
-                client.getSymbolAtPoint(document.fileName, document.offsetAt(position), (msg) => {
-                    if(msg.type.fullName != HOVER_NONE)
-                    {
-                        resolve(new vscode.Hover(msg.type.fullName))
-                    }
-                    else
-                    {
-                        reject(msg.type.fullName)
-                    }
-                })
+            return new Promise<vscode.Hover>((resolve, reject) => {
+                const instance = manager.instanceOfFile(document.fileName)
+                
+                if(instance) {
+                    instance.api.getSymbolAtPoint(document.fileName, document.offsetAt(position)).then((msg) => {
+                        if(msg.type.fullName != HOVER_NONE)
+                        {
+                            resolve(new vscode.Hover(msg.type.fullName))
+                        }
+                        else
+                        {
+                            reject(msg.type.fullName)
+                        }
+                    })
+                } else { 
+                    reject("No Ensime instance started for this file")
+                }
             })
-            return p
         }
     }
 }

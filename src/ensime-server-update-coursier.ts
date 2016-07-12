@@ -1,7 +1,8 @@
 import * as vscode from "vscode"
 import * as path from "path"
 let updateLog = require('loglevel').getLogger('ensime.server-update')
-let packageDir = (require('./utils')).packageDir
+import { packageDir} from './utils'
+import {ensimeServerUpdate} from 'ensime-client'
 
 function getPidLogger() {
   let serverUpdateLog = vscode.window.createOutputChannel("ensime-server-update-log")
@@ -17,6 +18,4 @@ function failure(msg, code) {
   vscode.window.showErrorMessage(msg)
 }
 
-let tempdir = packageDir() + path.sep + "ensime_update_coursier"
-
-export let getEnsimeServerUpdate = (require ('ensime-client')).ensimeServerUpdate(tempdir, getPidLogger, failure)
+export const updateEnsimeServerWithCoursier = ensimeServerUpdate(path.join(packageDir(), "ensime_update_coursier"), failure)

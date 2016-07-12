@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import {InstanceManager} from '../extension'
 
 let diagnosticCollection = vscode.languages.createDiagnosticCollection("ensime-scala")
 var diagnosticMap = {}
@@ -18,16 +19,15 @@ interface NoteMsg {
     notes : Note[]
 }
 
-export function register(client) : vscode.Disposable {
+export function register(manager: InstanceManager) : vscode.Disposable {
     vscode.workspace.textDocuments
         .filter((d) => d.languageId == "scala")
         .map((d) => documentMap[d.uri.fsPath] = d)
 
-    client.post({"typehint": "TypecheckAllReq"});
-
     return vscode.workspace.onDidSaveTextDocument((document) => {
         documentMap[document.fileName] = document;
-        client.typecheckFile(document.fileName)
+        const instance = manager.instanceOfFile(document.fileName)
+        instance.api.typecheckFile(document.fileName)
     })
 }
 

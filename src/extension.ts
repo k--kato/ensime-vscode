@@ -12,10 +12,10 @@ import dialog = require("dialog")
 import * as TypeCheck from './features/typecheck'
 import * as TypeHoverProvider from './features/typehoverprovider'
 
-let InstanceManager = ensimeClient.InstanceManager
-let Instance = ensimeClient.Instance
 
-export var instanceManager
+export type InstanceManager = ensimeClient.InstanceManager<any> // Maybe need to add ui  here or maybe not
+export const instanceManager = new ensimeClient.InstanceManager
+
 
 export var activeInstance
 
@@ -38,30 +38,22 @@ export function activate(context: vscode.ExtensionContext) {
     mainLog = logapi.getLogger('ensime.main')
     mainLog.setLevel(logLevel)
 
-    //TODO: Install Dependencies if not there (Pretty sure this isn't possible in VSCode)
-
     this.subscriptions = []
 
-    instanceManager = new InstanceManager
-
+    
     this.someInstanceStarted = false
 
-    //TODO: ImportSuggestison
-    //TODO: Refactorings
-    //TODO: Autocomplete Provider
-    //TODO: Implicit Info
-    //TODO: Add Commands for started and stopped state
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "ensime-vscode" is now active!');
+    mainLog.debug('Congratulations, your extension "ensime-vscode" is now active!');
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
 
     let startCommand = vscode.commands.registerCommand('extension.start', () => {
-        console.log("Attempting to start ENSIME")
+        mainLog.debug('Attempting to start ENSIME')
         selectAndBootAnEnsime()
     })
 
@@ -111,45 +103,42 @@ function statusbarOutput(statusbarItem, typechecking) {
 }
 
 function startInstance(dotEnsimePath) {
+    mainLog.debug('starting instance: ', dotEnsimePath)
+    ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath).then((dotEnsime) => {
+        let typechecking = undefined
 
+        let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
+        statusbarItem.text = "ENSIME"
+        statusbarItem.show()
 
-    //TODO: remove start command and add others
+        startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking)).then((connection) => {
+            mainLog.debug('got a connection, creating instance')
+            const instance = ensimeClient.makeInstanceOf(dotEnsime, connection, null)
 
-    //# FIXME: - we have had double commands for each instance :) This is a quick and dirty fix
-    // Mocuto: In the atom version, why are started commands being added here rather than in the startClient callback?
-    //if(not @someInstanceStarted)
-      //@addCommandsForStartedState()
-      //@someInstanceStarted = true
-
-    let dotEnsime = ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath)
-
-    let typechecking = undefined
-
-    let statusbarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
-    statusbarItem.text = "ENSIME"
-    statusbarItem.show()
-
-    startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking), (client) => {
-        //TODO: Add commands for started state here
-
-        vscode.window.showInformationMessage("Ensime connected!")
-        TypeCheck.register(client)
-        let hoverProvider = TypeHoverProvider.registerTypeHoverProvider(client)
-        typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
-
-        let instance = new Instance(dotEnsime, client, null)
-
-        instanceManager.registerInstance(instance)
-
-        if (!activeInstance)
-        {
+            instanceManager.registerInstance(instance)
+            if (! activeInstance)
             activeInstance = instance
-        }
 
-        client.post({"typehint":"ConnectionInfoReq"}, (msg) => {})
+            vscode.window.showInformationMessage("Ensime connected!")
+            TypeCheck.register(instanceManager)
+            let hoverProvider = TypeHoverProvider.registerTypeHoverProvider(instanceManager)
+            typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
 
-        switchToInstance(instance)
+            instanceManager.registerInstance(instance)
+
+            if (!activeInstance)
+            {
+                activeInstance = instance
+            }
+
+            connection.post({"typehint":"ConnectionInfoReq"}).then( (msg) => {})
+
+            switchToInstance(instance)
+        }, (failure) => {
+            mainLog.error(failure)
+        })
     })
+
 }
 function selectDotEnsime(callback, filterMethod = (dotEnsime) => true) {
     let dirs = [vscode.workspace.rootPath]
@@ -212,10 +201,4 @@ export function deactivate() {
     {
         typeHover.dispose()
     }
-    //@subscriptions.dispose()
-    //@controlSubscription.dispose()
-
-    //@autocompletePlusProvider?.dispose()
- //@autocompletePlusProvider = null
-
 }

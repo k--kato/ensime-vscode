@@ -2,8 +2,10 @@
 import * as vscode from "vscode"
 let fs = require("fs")
 let path = require("path")
+import logapi = require("loglevel")
+import {fileUtils, DotEnsime, ensimeServerUpdate, dotEnsimeUtils, startServerFromFile, startServerFromAssemblyJar, clientStarterFromServerStarter} from 'ensime-client'
 
-import {ensimeServerUpdate, dotEnsimeUtils, startServerFromFile, startServerFromAssemblyJar} from 'ensime-client'
+const log = logapi.getLogger('ensime.startup')
 
 let utils = require('./utils')
 let packageDir = utils.packageDir, withSbt = utils.withSbt, mkClasspathFilename = utils.mkClasspathFilename, mkAssemblyJarFilename = utils.mkAssemblyJarFilename
@@ -11,20 +13,17 @@ let packageDir = utils.packageDir, withSbt = utils.withSbt, mkClasspathFilename 
 let updateServer = ensimeServerUpdate
 let parseDotEnsime = dotEnsimeUtils.parseDotEnsime
 
-let updateEnsimeServerWithCoursier = require ('./ensime-server-update-coursier').getEnsimeServerUpdate
+import {updateEnsimeServerWithCoursier} from './ensime-server-update-coursier'
+
 let startupLog = require('loglevel').getLogger('ensime.startup')
 
 function classpathFileOk(cpF) {
-    if (~fs.existsSync(cpF))
-    {
+    if (~fs.existsSync(cpF)) {
         return false
-    }
-    else
-    {
+    } else {
         let cpFStats = fs.statSync(cpF)
         let fine = cpFStats.isFile && cpFStats.ctime > fs.statSync(path.join(packageDir(), 'package.json')).mtime
-        if (!fine)
-        {
+        if (!fine) {
             fs.unlinkSync(cpF)
         }
         return fine
@@ -32,9 +31,9 @@ function classpathFileOk(cpF) {
 }
 
 // Start ensime server. If classpath file is out of date, make an update first
-function startEnsimeServer(parsedDotEnsime, pidCallback) {
-    if (!fs.existsSync(parsedDotEnsime.cacheDir))
-    {
+function startEnsimeServer(parsedDotEnsime: DotEnsime) {
+    log.debug('starting Ensime server for', parsedDotEnsime.rootDir)
+    if (!fs.existsSync(parsedDotEnsime.cacheDir)) {
         fs.mkdirSync(parsedDotEnsime.cacheDir)
     }
 
@@ -44,23 +43,34 @@ function startEnsimeServer(parsedDotEnsime, pidCallback) {
     let ensimeServerFlags = ensimeConfig.get('ensimeServerFlags').toString()
     let assemblyJar = mkAssemblyJarFilename(parsedDotEnsime.scalaEdition, ensimeServerVersion)
 
-    if(fs.existsSync(assemblyJar))
-    {
-        startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerFlags, pidCallback)
-    }
-    else
-    {
+    if(fs.existsSync(assemblyJar)) {
+        log.debug('starting from assemblyJar')
+        return startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerFlags)
+    } else {
+        log.debug('starting from classpath file (coursier)')
         let cpF = mkClasspathFilename(parsedDotEnsime.scalaVersion, ensimeServerVersion)
-        let startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerFlags, pidCallback)
-        if(!classpathFileOk(cpF))
-        {
-            updateEnsimeServerWithCoursier(parsedDotEnsime, ensimeServerVersion, cpF, startFromCPFile)
-        }
-        else
-        {
-            startFromCPFile()
+        const startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerFlags)
+    
+        if(!classpathFileOk(cpF)) {
+            log.debug('No classpath file found matching versions, creating with coursier')
+            return fileUtils.ensureExists(packageDir()).then((packageDir) => {
+                const p = updateEnsimeServerWithCoursier(parsedDotEnsime, ensimeServerVersion, cpF)
+                return p.then(
+                    (thang) => {
+                        log.debug('got thang', thang, 'starting from cp file')
+                        return startFromCPFile();
+                    },
+                    (failure) => {
+                        log.error(failure)
+                    }
+                    )
+            });
+        } else {
+            log.debug('classpath file ok, using')
+            return startFromCPFile()
         }
     }
 }
 
-export var startClient = (require ('ensime-client')).ensimeClientStartup(startEnsimeServer)
+
+export const startClient = clientStarterFromServerStarter(startEnsimeServer)
