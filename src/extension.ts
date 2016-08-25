@@ -13,6 +13,7 @@ import * as TypeCheck from './features/typecheck'
 import * as TypeHoverProvider from './features/typehoverprovider'
 
 import * as Completions from './features/completions'
+import * as Definitions from './features/definitions'
 
 export type InstanceManager = ensimeClient.InstanceManager<any> // Maybe need to add ui  here or maybe not
 export const instanceManager = new ensimeClient.InstanceManager
@@ -135,7 +136,7 @@ function startInstance(dotEnsimePath: string) {
             const hoverProvider = TypeHoverProvider.hoverProvider(instanceManager)
             typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
             completionsDisposable = vscode.languages.registerCompletionItemProvider('scala', Completions.completionsProvider())
-
+            vscode.languages.registerDefinitionProvider('scala', Definitions.definitionsProvider(instanceManager))
            
 
             instanceManager.registerInstance(instance)
