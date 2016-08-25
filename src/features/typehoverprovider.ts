@@ -3,7 +3,7 @@ import {InstanceManager} from '../extension'
 const HOVER_NONE = "<none>"
 
 
-export function registerTypeHoverProvider(manager : InstanceManager) : vscode.HoverProvider {
+export function hoverProvider(manager : InstanceManager) : vscode.HoverProvider {
     return {
         provideHover(document, position, token) {
             return new Promise<vscode.Hover>((resolve, reject) => {

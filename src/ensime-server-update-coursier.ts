@@ -18,4 +18,4 @@ function failure(msg, code) {
   vscode.window.showErrorMessage(msg)
 }
 
-export const updateEnsimeServerWithCoursier = ensimeServerUpdate(path.join(packageDir(), "ensime_update_coursier"), failure)
+export const updateEnsimeServerWithCoursier = ensimeServerUpdate(path.join(packageDir(), "ensime_update_coursier"), failure, () => (s) => null)

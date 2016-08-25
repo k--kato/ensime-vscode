@@ -12,6 +12,7 @@ import dialog = require("dialog")
 import * as TypeCheck from './features/typecheck'
 import * as TypeHoverProvider from './features/typehoverprovider'
 
+import * as Completions from './features/completions'
 
 export type InstanceManager = ensimeClient.InstanceManager<any> // Maybe need to add ui  here or maybe not
 export const instanceManager = new ensimeClient.InstanceManager
@@ -21,7 +22,8 @@ export var activeInstance
 
 var mainLog
 
-var typeHover
+var typeHover: vscode.Disposable
+var completionsDisposable: vscode.Disposable
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -34,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
     logapi.getLogger('ensime.startup').setLevel(logLevel)
     logapi.getLogger('ensime.autocomplete-plus-provider').setLevel(logLevel)
     logapi.getLogger('ensime.refactorings').setLevel(logLevel)
-
+    logapi.getLogger('ensime.completions').setLevel(logLevel)
     mainLog = logapi.getLogger('ensime.main')
     mainLog.setLevel(logLevel)
 
@@ -52,10 +54,19 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
 
-    let startCommand = vscode.commands.registerCommand('extension.start', () => {
+    let startCommand = vscode.commands.registerCommand('ensime.start', () => {
         mainLog.debug('Attempting to start ENSIME')
         selectAndBootAnEnsime()
     })
+
+
+    const stopCommand = vscode.commands.registerCommand('ensime.stop', () => {
+        selectDotEnsime(
+            (selectedDotEnsime) => stopInstance(selectedDotEnsime),
+            (dotEnsime) => { return instanceManager.isStarted(dotEnsime) }
+        );
+    });
+
 
     context.subscriptions.push(startCommand)
 }
@@ -102,7 +113,7 @@ function statusbarOutput(statusbarItem, typechecking) {
     }
 }
 
-function startInstance(dotEnsimePath) {
+function startInstance(dotEnsimePath: string) {
     mainLog.debug('starting instance: ', dotEnsimePath)
     ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath).then((dotEnsime) => {
         let typechecking = undefined
@@ -121,8 +132,11 @@ function startInstance(dotEnsimePath) {
 
             vscode.window.showInformationMessage("Ensime connected!")
             TypeCheck.register(instanceManager)
-            let hoverProvider = TypeHoverProvider.registerTypeHoverProvider(instanceManager)
+            const hoverProvider = TypeHoverProvider.hoverProvider(instanceManager)
             typeHover = vscode.languages.registerHoverProvider('scala', hoverProvider);
+            completionsDisposable = vscode.languages.registerCompletionItemProvider('scala', Completions.completionsProvider())
+
+           
 
             instanceManager.registerInstance(instance)
 
@@ -138,8 +152,15 @@ function startInstance(dotEnsimePath) {
             mainLog.error(failure)
         })
     })
-
 }
+
+function stopInstance(dotEnsimePath: string) {
+    ensimeClient.dotEnsimeUtils.parseDotEnsime(dotEnsimePath).then((dotEnsime) => {
+        instanceManager.stopInstance(dotEnsime)
+    });
+}
+
+
 function selectDotEnsime(callback, filterMethod = (dotEnsime) => true) {
     let dirs = [vscode.workspace.rootPath]
 
@@ -200,5 +221,6 @@ export function deactivate() {
     if(typeHover)
     {
         typeHover.dispose()
+        completionsDisposable.dispose()
     }
 }

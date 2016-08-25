@@ -55,8 +55,12 @@
     },
     "commands": [
       {
-        "command": "extension.start",
+        "command": "ensime.start",
         "title": "Ensime: Start"
+      },
+      {
+        "command": "ensime.stop",
+        "title": "Ensime: Stop"
       }
     ]
   },
@@ -66,8 +70,8 @@
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
-    "vscode": "^0.11.14",
-    "typescript": "^1.8.10"
+    "vscode": "0.11.17",
+    "typescript": "2.0.0"
   },
   "dependencies": {
     "bluebird": "^3.4.1",
