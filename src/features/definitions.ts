@@ -14,9 +14,8 @@ export function definitionsProvider(instanceManager: InstanceManager) : vscode.D
                if(pos.typehint == 'OffsetSourcePosition') {
                    const offsetPos = <serverProtocol.OffsetSourcePosition> pos
                    // TODO: How to we resolve a character offset into a row,col position before we have the buffer?
-                   
-                   const x : vscode.TextDocument = null 
-                   return new vscode.Location(vscode.Uri.file(offsetPos.file), new vscode.Position(0, 0)) // FIXME:
+                   const uri = vscode.Uri.file(offsetPos.file)
+                   return new vscode.Location(uri, new vscode.Position(offsetPos.row-1, offsetPos.col))
                } else if(pos.typehint == 'LineSourcePosition') {
                    const linePos = <serverProtocol.LineSourcePosition> pos
                    return new vscode.Location(vscode.Uri.file(linePos.file), new vscode.Position(linePos.line, 0))

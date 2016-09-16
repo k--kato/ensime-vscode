@@ -33,23 +33,24 @@ function classpathFileOk(cpF) {
 // Start ensime server. If classpath file is out of date, make an update first
 function startEnsimeServer(parsedDotEnsime: DotEnsime) {
     log.debug('starting Ensime server for', parsedDotEnsime.rootDir)
+    vscode.window.showInformationMessage("Starting Ensime server")
     if (!fs.existsSync(parsedDotEnsime.cacheDir)) {
         fs.mkdirSync(parsedDotEnsime.cacheDir)
     }
 
-    let ensimeConfig = vscode.workspace.getConfiguration('Ensime')
-    let ensimeServerVersion = ensimeConfig.get('ensimeServerVersion').toString()
+    const ensimeConfig = vscode.workspace.getConfiguration('Ensime')
+    const ensimeServerVersion = ensimeConfig.get('ensimeServerVersion').toString()
 
-    let ensimeServerFlags = ensimeConfig.get('ensimeServerFlags').toString()
-    let assemblyJar = mkAssemblyJarFilename(parsedDotEnsime.scalaEdition, ensimeServerVersion)
+    const ensimeServerFlags = ensimeConfig.get('ensimeServerFlags').toString()
+    const assemblyJar = mkAssemblyJarFilename(parsedDotEnsime.scalaEdition, ensimeServerVersion)
 
     if(fs.existsSync(assemblyJar)) {
         log.debug('starting from assemblyJar')
-        return startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerFlags)
+        return startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerVersion, ensimeServerFlags)
     } else {
         log.debug('starting from classpath file (coursier)')
         let cpF = mkClasspathFilename(parsedDotEnsime.scalaVersion, ensimeServerVersion)
-        const startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerFlags)
+        const startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerVersion, ensimeServerFlags)
     
         if(!classpathFileOk(cpF)) {
             log.debug('No classpath file found matching versions, creating with coursier')

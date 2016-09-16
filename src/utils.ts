@@ -44,7 +44,6 @@ export function mkAssemblyJarFilename(scalaEdition, ensimeServerVersion) {
     return path.join( packageDir(), `ensime_${scalaEdition}-${ensimeServerVersion}-assembly.jar`)
 }
 
-// TODO: get a persistant dir from package, not project
 export function packageDir() {
-  return path.join(vscode.workspace.rootPath, ".ensime_cache")
+    return vscode.extensions.getExtension('ensime.ensime-vscode').extensionPath;
 }

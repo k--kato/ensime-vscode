@@ -30,7 +30,7 @@ var completionsDisposable: vscode.Disposable
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     //Get console log level from workspace settings (or user settings)
-    let logLevel = vscode.workspace.getConfiguration('Ensime').get("logLevel", "trace").toString()
+    const logLevel = vscode.workspace.getConfiguration('Ensime').get("logLevel", "debug").toString()
 
     logapi.getLogger('ensime.client').setLevel(logLevel)
     logapi.getLogger('ensime.server-update').setLevel(logLevel)
@@ -123,7 +123,13 @@ function startInstance(dotEnsimePath: string) {
         statusbarItem.text = "ENSIME"
         statusbarItem.show()
 
-        startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking)).then((connection) => {
+        const ensimeConfig = vscode.workspace.getConfiguration('Ensime')
+        const ensimeServerVersion = ensimeConfig.get('ensimeServerVersion').toString()
+
+        mainLog.debug('ensime server version from config: ', ensimeServerVersion);
+
+        startClient(dotEnsime, ensimeServerVersion, statusbarOutput(statusbarItem, typechecking)).then((connection) => {
+            vscode.window.showInformationMessage("Got a connection with ensime server!")
             mainLog.debug('got a connection, creating instance')
             const instance = ensimeClient.makeInstanceOf(dotEnsime, connection, null)
 
@@ -141,8 +147,7 @@ function startInstance(dotEnsimePath: string) {
 
             instanceManager.registerInstance(instance)
 
-            if (!activeInstance)
-            {
+            if (!activeInstance) {
                 activeInstance = instance
             }
 
