@@ -38,6 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
     logapi.getLogger('ensime.autocomplete-plus-provider').setLevel(logLevel)
     logapi.getLogger('ensime.refactorings').setLevel(logLevel)
     logapi.getLogger('ensime.completions').setLevel(logLevel)
+    logapi.getLogger('ensime.definitions').setLevel(logLevel)
     mainLog = logapi.getLogger('ensime.main')
     mainLog.setLevel(logLevel)
 
@@ -128,7 +129,7 @@ function startInstance(dotEnsimePath: string) {
 
         mainLog.debug('ensime server version from config: ', ensimeServerVersion);
 
-        startClient(dotEnsime, ensimeServerVersion, statusbarOutput(statusbarItem, typechecking)).then((connection) => {
+        startClient(dotEnsime, statusbarOutput(statusbarItem, typechecking)).then((connection) => {
             vscode.window.showInformationMessage("Got a connection with ensime server!")
             mainLog.debug('got a connection, creating instance')
             const instance = ensimeClient.makeInstanceOf(dotEnsime, connection, null)

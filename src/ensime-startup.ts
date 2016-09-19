@@ -46,11 +46,11 @@ function startEnsimeServer(parsedDotEnsime: DotEnsime) {
 
     if(fs.existsSync(assemblyJar)) {
         log.debug('starting from assemblyJar')
-        return startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerVersion, ensimeServerFlags)
+        return startServerFromAssemblyJar(assemblyJar, parsedDotEnsime, ensimeServerFlags)
     } else {
         log.debug('starting from classpath file (coursier)')
         let cpF = mkClasspathFilename(parsedDotEnsime.scalaVersion, ensimeServerVersion)
-        const startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerVersion, ensimeServerFlags)
+        const startFromCPFile = () => startServerFromFile(cpF, parsedDotEnsime, ensimeServerFlags)
     
         if(!classpathFileOk(cpF)) {
             log.debug('No classpath file found matching versions, creating with coursier')
