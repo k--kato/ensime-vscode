@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import {InstanceManager} from '../extension'
 import {serverProtocol} from 'ensime-client'
 import logapi = require("loglevel")
+import fs = require('fs')
 
 const log = logapi.getLogger('ensime.definitions')
 
@@ -28,11 +29,8 @@ export function definitionsProvider(instanceManager: InstanceManager) : vscode.D
                        const pos = openedDoc.positionAt(offsetPos.offset)
                        return new vscode.Location(uri, pos);
                    } else {
-                       return vscode.workspace.openTextDocument(uri).then(definitionDoc => {
-                           vscode.window.showTextDocument(definitionDoc)
-                           const pos = definitionDoc.positionAt(offsetPos.offset)
-                           return new vscode.Location(uri, pos);
-                       });
+                       const pos = offset2Position(offsetPos.file, offsetPos.offset);
+                       return new vscode.Location(uri, pos);
                    }
                } else if(pos.typehint == 'LineSourcePosition') {
                    const linePos = <serverProtocol.LineSourcePosition> pos
@@ -44,4 +42,26 @@ export function definitionsProvider(instanceManager: InstanceManager) : vscode.D
 
     log.debug('registering definitions provider: ', provider)
     return provider
+}
+
+export function offset2Position(filePath: string, offset: number) : vscode.Position {
+
+    if (!fs.existsSync(filePath)) {
+        return null
+    }
+
+    // todo: read huge files, file encoding
+    const read = fs.readFileSync(filePath, 'utf8')
+
+    var total = 0
+    var reader = read.split('\n')
+    for (var line = 0; line < reader.length; line++) {
+        var len = reader[line].length + 1
+        total += len
+        if (offset < total) {
+            var charactor = len - (total - offset)
+            return new vscode.Position(line, charactor) 
+        }
+    }
+    return null
 }
